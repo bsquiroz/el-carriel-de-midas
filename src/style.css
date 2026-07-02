@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-midas-bg: #0F2A1D;
+  --color-midas-gold: #C9A227;
+  --color-midas-gold-light: #E8D58B;
+  --color-midas-card: #173B2B;
+  --color-midas-text: #F5F3EA;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer components {
+  .btn-metallic {
+    @apply bg-gradient-to-b from-midas-gold to-midas-gold-light text-midas-bg font-semibold
+           shadow-lg shadow-black/40 rounded-md px-4 py-2 transition
+           hover:brightness-105 active:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .card-midas {
+    @apply bg-midas-card rounded-xl shadow-lg shadow-black/30 p-6;
+  }
+}
