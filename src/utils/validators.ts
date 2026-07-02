@@ -43,3 +43,23 @@ export function validateGramos(raw: string): FieldValidation {
 
   return { valid: true, message: null }
 }
+
+export function validatePercentage(raw: string): FieldValidation {
+  const trimmed = raw.trim()
+
+  if (trimmed === '') {
+    return { valid: false, message: 'El porcentaje es obligatorio.' }
+  }
+
+  if (!DECIMAL_COMMA_PATTERN.test(trimmed)) {
+    return { valid: false, message: 'Debe ser un número válido, ej: 10.' }
+  }
+
+  const percentage = parseFloat(trimmed.replace(',', '.'))
+
+  if (percentage < 0 || percentage > 100) {
+    return { valid: false, message: 'Debe estar entre 0 y 100.' }
+  }
+
+  return { valid: true, message: null }
+}

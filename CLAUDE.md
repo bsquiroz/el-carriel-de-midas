@@ -10,7 +10,7 @@ Aplicación web que calcula en tiempo real cuánto se puede pagar por una determ
 - TypeScript estricto (`noUnusedLocals`, `noUnusedParameters` activados en `tsconfig.app.json`)
 - Vite 8
 - TailwindCSS v4 vía `@tailwindcss/vite` — configuración **CSS-first** en `src/style.css` (no existe `tailwind.config.*`, los tokens de marca están en un bloque `@theme`)
-- Pinia (store único: `goldPriceStore`)
+- Pinia (`goldPriceStore` para el precio del oro, `pricingConfigStore` para el descuento de mercado/margen de ganancia editables en modo admin)
 - Google Font "Playfair Display" cargada por `<link>` en `index.html` (requiere red la primera vez; se usa solo para títulos y precios grandes vía la utilidad `font-display`)
 
 Arquitectura por capas: `services/` (solo HTTP) → `stores/` (estado + persistencia) → `composables/` (toda la lógica matemática/negocio) → `components/` (solo presentación, nunca calculan).
@@ -65,9 +65,9 @@ precioCompra24kCop = price24kCop × (1 − MARKET_DISCOUNT_RATE) × (1 − PROFI
 - `MARKET_DISCOUNT_RATE`: % que se paga por debajo del precio internacional en el mercado colombiano.
 - `PROFIT_MARGIN_RATE`: % de margen de ganancia del negocio, aplicado sobre el precio ya ajustado al mercado.
 
-Ambas son **constantes** en `src/constants/pricing.constants.ts`, actualmente **10% y 10%** respectivamente. Cambiar el margen de ganancia (ej. a 5%, 7%, 15%) implica editar únicamente ese archivo — ninguna otra pieza del código necesita tocarse, y no dispara un refetch (el precio internacional cacheado se reutiliza, solo cambia el cálculo derivado).
+Los valores **por defecto** de ambas viven en `src/constants/pricing.constants.ts` (actualmente **10% y 10%**) y siembran el estado inicial de `src/stores/pricingConfigStore.ts` — un store Pinia **sin persistencia** (deliberadamente, ver "Modo administrador" abajo). Cambiar el default de fábrica implica editar solo ese archivo de constantes.
 
-La función pura vive en `src/composables/useBuyPrice.ts` (`calculateBuyPrice24kCop`). `src/composables/useGoldPrice.ts` expone tanto `price24kCop` (internacional) como `buyPrice24kCop` (ajustado), con sus versiones formateadas (`formattedInternationalPricePerGram`, `formattedBuyPricePerGram`).
+La función pura de cálculo vive en `src/composables/useBuyPrice.ts` (`calculateBuyPrice24kCop(internationalPrice24kCop, marketDiscountRate, profitMarginRate)` — recibe las tasas como parámetros, no las importa). `src/composables/useGoldPrice.ts` combina `price24kCop` (internacional, del `goldPriceStore`) con las tasas vigentes (`src/composables/usePricingConfig.ts`, wrapper de `pricingConfigStore`) para exponer `buyPrice24kCop` (ajustado) y sus versiones formateadas (`formattedInternationalPricePerGram`, `formattedBuyPricePerGram`). Al ser todo `computed`, cambiar una tasa recalcula en cascada `buyPrice24kCop` → "Precio por gramo" → "Total" sin ninguna acción adicional.
 
 **Todos los cálculos de "Precio por gramo" y "Total" (sección Cálculo/Resultado) usan `buyPrice24kCop`, nunca `price24kCop` directamente.**
 
@@ -87,9 +87,12 @@ Los usuarios normales no tienen forma de refrescar el precio manualmente. No hay
 
 ## Modo administrador
 
-Se activa con el query param `?musniga-quimaya` (bare) o `?musniga-quimaya=true` (cualquier otro valor, ej. `=false` o `=1`, **no** activa el modo — lectura estricta). Parseo en `src/utils/adminMode.ts` (`isAdminModeEnabled`), expuesto reactivamente vía `src/composables/useAdminMode.ts`. Se evalúa una sola vez al montar (la query no cambia sin recarga).
+Se activa con el query param `?musinga-quimbaya` (bare) o `?musinga-quimbaya=true` (cualquier otro valor, ej. `=false` o `=1`, **no** activa el modo — lectura estricta). Constante en `src/constants/admin.constants.ts` (`ADMIN_QUERY_PARAM`). Parseo en `src/utils/adminMode.ts` (`isAdminModeEnabled`), expuesto reactivamente vía `src/composables/useAdminMode.ts`. Se evalúa una sola vez al montar (la query no cambia sin recarga).
 
-Con admin activo se muestra el botón **"Actualizar precio del oro"** (`src/components/AdminRefreshButton.vue`), inyectado en el slot `action` de `PriceCard.vue`. Al presionarlo: refetch forzado (ignora expiración), reemplaza el precio y la fecha, reinicia el TTL. Acción `refreshPrice()` en el store.
+Con admin activo se muestran:
+
+1. **Botón "Actualizar precio del oro"** (`src/components/AdminRefreshButton.vue`), inyectado en el slot `action` de `PriceCard.vue`. Al presionarlo: refetch forzado (ignora expiración), reemplaza el precio y la fecha, reinicia el TTL. Acción `refreshPrice()` en `goldPriceStore`.
+2. **Tarjeta "Ajustes de precio (admin)"** (`src/components/AdminPricingControls.vue`), montada entre `PriceCard` y `GoldCalculatorForm` en `GoldCalculator.vue`. Dos inputs — "Descuento de mercado" y "Margen de ganancia", en porcentaje (0-100, acepta coma decimal, mismo patrón de validación que ley/gramos vía `validatePercentage` en `src/utils/validators.ts`) — que escriben en vivo a `pricingConfigStore` (sin botón, sin watchers, igual filosofía que el resto de la app). **Importante: estos cambios son solo para la sesión/pestaña actual — `pricingConfigStore` no usa LocalStorage a propósito, así que al recargar la página las tasas vuelven a los defaults de `pricing.constants.ts` (10%/10%).** Si en el futuro se pide que persistan (y afecten a todos los visitantes como ya pasa con el precio del oro), replicar el patrón `readFromStorage`/`writeToStorage` que ya usa `goldPriceStore`.
 
 ---
 
@@ -233,19 +236,21 @@ src/
     storage.ts                     # readFromStorage/writeToStorage/removeFromStorage (try/catch)
     priceExpiry.ts                 # isExpired()
     adminMode.ts                   # isAdminModeEnabled()
-    validators.ts                  # validateLey(), validateGramos() — acepta coma decimal
+    validators.ts                  # validateLey(), validateGramos(), validatePercentage() — todos aceptan coma decimal
 
   services/
     goldPriceService.ts            # fetchGoldSpotPrice() — SOLO HTTP, sin lógica de negocio
 
   stores/
-    goldPriceStore.ts              # Pinia: state (precio internacional crudo) + initialize()/refreshPrice() + cache-check + persistencia
+    goldPriceStore.ts              # Pinia: state (precio internacional crudo) + initialize()/refreshPrice() + cache-check + persistencia (LocalStorage)
+    pricingConfigStore.ts          # Pinia: marketDiscountRate/profitMarginRate + setters — SIN persistencia (session-only, a propósito)
 
   composables/
     useGoldPriceMapper.ts          # mapSpotResponseToGoldPrice() — único lugar que toca el shape crudo de la API
-    useBuyPrice.ts                 # calculateBuyPrice24kCop() — aplica MARKET_DISCOUNT_RATE + PROFIT_MARGIN_RATE
+    useBuyPrice.ts                 # calculateBuyPrice24kCop(price, marketDiscountRate, profitMarginRate) — función pura, tasas por parámetro
+    usePricingConfig.ts            # wrapper de pricingConfigStore: marketDiscountRate/profitMarginRate + setters
     useGoldCalculator.ts           # ley/gramos + buyPrice24kCop -> validaciones + pureza/precioPorGramo/total (todo computed)
-    useGoldPrice.ts                # wrapper del store: price24kCop, buyPrice24kCop, formateados, initialize/refresh
+    useGoldPrice.ts                # combina goldPriceStore + usePricingConfig: price24kCop, buyPrice24kCop, formateados, initialize/refresh
     useAdminMode.ts                # isAdmin (evaluado una vez desde la URL)
 
   components/
@@ -254,7 +259,8 @@ src/
     GoldCalculatorForm.vue         # inputs de ley y gramos
     ResultCard.vue                 # Liquidación: precio por gramo + total, con placeholders y glow decorativo
     AdminRefreshButton.vue         # botón admin, presentacional
-    GoldCalculator.vue             # contenedor: orquesta store + composables + sub-componentes
+    AdminPricingControls.vue       # inputs admin: descuento de mercado + margen de ganancia (session-only)
+    GoldCalculator.vue             # contenedor: orquesta stores + composables + sub-componentes
 ```
 
 Cada capa mantiene su responsabilidad única: `services/` solo HTTP, `composables/` toda la matemática/negocio, `stores/` solo orquestación de estado/caché, `components/` solo presentación (nunca calculan).
@@ -265,7 +271,7 @@ Cada capa mantiene su responsabilidad única: `services/` solo HTTP, `composable
 
 Ya resuelto de forma extensible (agregar sin romper lo existente):
 
-- **Margen de ganancia configurable** ✅ implementado como constantes (`MARKET_DISCOUNT_RATE`, `PROFIT_MARGIN_RATE`); si se pide que sea configurable desde UI (no solo código), agregar un store/composable nuevo sin tocar el cálculo existente.
+- **Margen de ganancia configurable** ✅ implementado en dos niveles: default de fábrica como constantes (`MARKET_DISCOUNT_RATE`, `PROFIT_MARGIN_RATE`) y override en vivo desde UI en modo admin (`AdminPricingControls.vue` + `pricingConfigStore`, sin persistencia). Si se pide que el override persista y afecte a todos los visitantes, agregar `readFromStorage`/`writeToStorage` a `pricingConfigStore.ts` (mismo patrón que `goldPriceStore.ts`) sin tocar el resto.
 - Pendientes (mencionados en el brief original, no implementados): historial de compras, historial del precio del oro, diferentes monedas, diferentes países, dashboard administrativo, clientes, impresión de recibos, autenticación.
 
 ---

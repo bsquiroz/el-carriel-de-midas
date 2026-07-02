@@ -8,6 +8,7 @@ import PriceCard from './PriceCard.vue'
 import GoldCalculatorForm from './GoldCalculatorForm.vue'
 import ResultCard from './ResultCard.vue'
 import AdminRefreshButton from './AdminRefreshButton.vue'
+import AdminPricingControls from './AdminPricingControls.vue'
 
 const leyRaw = ref('')
 const gramosRaw = ref('')
@@ -54,6 +55,8 @@ onMounted(() => {
         <AdminRefreshButton :loading="loading" @click="refresh" />
       </template>
     </PriceCard>
+
+    <AdminPricingControls v-if="isAdmin" />
 
     <GoldCalculatorForm
       v-model:ley="leyRaw"

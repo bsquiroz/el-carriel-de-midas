@@ -2,6 +2,7 @@ import { computed, type ComputedRef } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGoldPriceStore } from '../stores/goldPriceStore'
 import { calculateBuyPrice24kCop } from './useBuyPrice'
+import { usePricingConfig } from './usePricingConfig'
 import { formatCop } from '../utils/currency'
 import { formatUpdatedAt } from '../utils/date'
 
@@ -18,9 +19,12 @@ export function useGoldPrice(): {
 } {
   const store = useGoldPriceStore()
   const { price24kCop, updatedAt, loading, error } = storeToRefs(store)
+  const { marketDiscountRate, profitMarginRate } = usePricingConfig()
 
   const buyPrice24kCop = computed(() =>
-    price24kCop.value === null ? null : calculateBuyPrice24kCop(price24kCop.value),
+    price24kCop.value === null
+      ? null
+      : calculateBuyPrice24kCop(price24kCop.value, marketDiscountRate.value, profitMarginRate.value),
   )
 
   const formattedInternationalPricePerGram = computed(() =>
