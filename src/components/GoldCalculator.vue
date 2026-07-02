@@ -13,10 +13,11 @@ const leyRaw = ref('')
 const gramosRaw = ref('')
 
 const {
-  price24kCop,
+  buyPrice24kCop,
   loading,
   error,
-  formattedPricePerGram,
+  formattedInternationalPricePerGram,
+  formattedBuyPricePerGram,
   formattedUpdatedAt,
   initialize,
   refresh,
@@ -27,13 +28,13 @@ const { isAdmin } = useAdminMode()
 const { leyValidation, gramosValidation, isValid, result } = useGoldCalculator(
   leyRaw,
   gramosRaw,
-  price24kCop,
+  buyPrice24kCop,
 )
 
 const precioPorGramoLabel = computed(() => formatCop(result.value.precioPorGramo))
 const totalLabel = computed(() => formatCop(result.value.total))
 
-const formDisabled = computed(() => price24kCop.value === null || loading.value)
+const formDisabled = computed(() => buyPrice24kCop.value === null || loading.value)
 
 onMounted(() => {
   initialize()
@@ -43,7 +44,8 @@ onMounted(() => {
 <template>
   <div class="flex w-full flex-col gap-6">
     <PriceCard
-      :price-per-gram-label="formattedPricePerGram"
+      :price-per-gram-label="formattedBuyPricePerGram"
+      :international-price-label="formattedInternationalPricePerGram"
       :updated-at-label="formattedUpdatedAt"
       :loading="loading"
       :error="error"

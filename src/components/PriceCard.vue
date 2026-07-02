@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   pricePerGramLabel: string | null
+  internationalPriceLabel: string | null
   updatedAtLabel: string | null
   loading: boolean
   error: string | null
@@ -13,11 +14,15 @@ defineProps<{
     <p v-else-if="error" class="text-red-300">{{ error }}</p>
     <template v-else>
       <div>
-        <p class="label-caps mb-1">Precio actual del oro 24K</p>
+        <p class="label-caps mb-1">Precio de compra · Oro 24K</p>
         <p class="font-display text-4xl font-semibold text-midas-gold lg:text-5xl">
           {{ pricePerGramLabel }} <span class="font-sans text-lg font-normal text-midas-text/70">COP / gramo</span>
         </p>
         <p class="mt-2 text-sm text-midas-text/60">
+          Referencia internacional:
+          <span class="text-midas-gold-light">{{ internationalPriceLabel }} COP / gramo</span>
+        </p>
+        <p class="mt-1 text-sm text-midas-text/60">
           Actualizado:
           <span class="text-midas-gold-light">{{ updatedAtLabel }}</span>
         </p>

@@ -9,23 +9,24 @@ const EMPTY_RESULT: GoldCalculationResult = { pureza: 0, precioPorGramo: 0, tota
 export function useGoldCalculator(
   leyRaw: Ref<string>,
   gramosRaw: Ref<string>,
-  price24kCop: Ref<number | null> | ComputedRef<number | null>,
+  buyPrice24kCop: Ref<number | null> | ComputedRef<number | null>,
 ) {
   const leyValidation = computed<FieldValidation>(() => validateLey(leyRaw.value))
   const gramosValidation = computed<FieldValidation>(() => validateGramos(gramosRaw.value))
 
   const isValid = computed<boolean>(
-    () => leyValidation.value.valid && gramosValidation.value.valid && price24kCop.value !== null,
+    () =>
+      leyValidation.value.valid && gramosValidation.value.valid && buyPrice24kCop.value !== null,
   )
 
   const result = computed<GoldCalculationResult>(() => {
-    if (!isValid.value || price24kCop.value === null) return EMPTY_RESULT
+    if (!isValid.value || buyPrice24kCop.value === null) return EMPTY_RESULT
 
     const ley = parseInt(leyRaw.value.trim(), 10)
     const gramos = parseFloat(gramosRaw.value.trim().replace(',', '.'))
 
     const pureza = ley / PURE_GOLD_LEY
-    const precioPorGramo = price24kCop.value * pureza
+    const precioPorGramo = buyPrice24kCop.value * pureza
     const total = precioPorGramo * gramos
 
     return { pureza, precioPorGramo, total }
