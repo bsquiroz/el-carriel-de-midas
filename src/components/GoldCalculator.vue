@@ -41,13 +41,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex w-full max-w-md flex-col gap-6">
+  <div class="flex w-full flex-col gap-6">
     <PriceCard
       :price-per-gram-label="formattedPricePerGram"
       :updated-at-label="formattedUpdatedAt"
       :loading="loading"
       :error="error"
-    />
+    >
+      <template v-if="isAdmin" #action>
+        <AdminRefreshButton :loading="loading" @click="refresh" />
+      </template>
+    </PriceCard>
 
     <GoldCalculatorForm
       v-model:ley="leyRaw"
@@ -62,7 +66,5 @@ onMounted(() => {
       :total-label="totalLabel"
       :is-valid="isValid"
     />
-
-    <AdminRefreshButton v-if="isAdmin" :loading="loading" @click="refresh" />
   </div>
 </template>

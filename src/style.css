@@ -6,20 +6,25 @@
   --color-midas-gold-light: #E8D58B;
   --color-midas-card: #173B2B;
   --color-midas-text: #F5F3EA;
+  --font-display: 'Playfair Display', ui-serif, Georgia, serif;
 }
 
 body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: radial-gradient(ellipse 120% 60% at 50% 0%, #1a4a34 0%, #0F2A1D 55%, #0a1f15 100%);
 }
 
 @layer components {
   .btn-metallic {
-    @apply bg-gradient-to-b from-midas-gold to-midas-gold-light text-midas-bg font-semibold
-           shadow-lg shadow-black/40 rounded-md px-4 py-2 transition
+    @apply bg-gradient-to-b from-midas-gold to-midas-gold-light text-midas-bg font-bold
+           uppercase tracking-wide shadow-lg shadow-black/40 rounded-md px-4 py-2.5 transition
            hover:brightness-105 active:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .card-midas {
-    @apply bg-midas-card rounded-xl shadow-lg shadow-black/30 p-6;
+    @apply bg-midas-card border border-midas-gold/15 rounded-xl shadow-lg shadow-black/30 p-6;
+  }
+  .label-caps {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-midas-gold;
   }
 }

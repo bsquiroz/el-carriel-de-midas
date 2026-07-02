@@ -2,6 +2,7 @@
 defineProps<{
   modelValue: string
   label: string
+  hint?: string
   placeholder?: string
   error?: string | null
   inputmode?: 'numeric' | 'decimal'
@@ -15,7 +16,10 @@ defineEmits<{
 
 <template>
   <label class="flex flex-col gap-1.5 text-left">
-    <span class="text-sm font-medium text-midas-gold-light">{{ label }}</span>
+    <span class="flex items-baseline justify-between gap-2">
+      <span class="label-caps">{{ label }}</span>
+      <span v-if="hint" class="text-xs text-midas-text/50">{{ hint }}</span>
+    </span>
     <input
       :value="modelValue"
       :placeholder="placeholder"

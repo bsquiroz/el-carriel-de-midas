@@ -16,10 +16,11 @@ defineEmits<{
 </script>
 
 <template>
-  <section class="card-midas flex flex-col gap-4">
+  <section class="card-midas flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6">
     <BaseInput
       :model-value="ley"
       label="Ley del oro"
+      hint="Milésimas (0-999)"
       placeholder="Ej: 750"
       inputmode="numeric"
       :error="leyError"
@@ -29,7 +30,8 @@ defineEmits<{
     <BaseInput
       :model-value="gramos"
       label="Peso"
-      placeholder="5,25 gramos"
+      hint="Gramos"
+      placeholder="Ej: 5,25"
       inputmode="decimal"
       :error="gramosError"
       :disabled="disabled"
